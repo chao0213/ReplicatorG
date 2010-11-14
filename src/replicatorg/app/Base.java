@@ -222,6 +222,7 @@ public class Base {
 	MainWindow editor = null;
 
 	static public void main(String args[]) {
+	    boolean showWindow = false;
 
 		// make sure that this is running on java 1.5 or better.
 		if (Base.javaVersion < 1.5f) {
@@ -233,9 +234,13 @@ public class Base {
 
 		// grab any opened file from the command line
 
-		if (args.length == 1) {
+		if (args.length == 1 && !args[0].equals("-s")) {
 			Base.openedAtStartup = args[0];
+			showWindow = true;
+		} else if (args.length == 0) {
+		    showWindow = true;
 		}
+		    
 		
 		// Warn about read-only directories
     	{
@@ -269,7 +274,11 @@ public class Base {
 		MRJApplicationUtils.registerOpenDocumentHandler(startupOpen);
 		
 		// Create the new application "Base" class.
-		new Base();
+		if (showWindow) {
+		    new Base();
+		} else {
+		    new ShellMode(args);
+		}
 	}
 
 	public Base() {
