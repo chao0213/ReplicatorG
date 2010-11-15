@@ -45,15 +45,17 @@ public class ShellMode {
     try {
       cmd = new PosixParser().parse(getOptions(), cmdargs);
 
-      if (cmd.hasOption("help")) usage();
-
-      if (cmd.hasOption("build")) {
+      if (cmd.hasOption("help")) {
+        usage();
+      } else if (cmd.hasOption("build")) {
         System.out.println("Building your object.");
         String machineName = Base.preferences.get("machine.name", null);
         String serialPort = cmd.hasOption("serial") ? 
                             cmd.getOptionValue("serial") : 
                             Base.preferences.get("serial.last_selected", null);
         build(machineName, serialPort);
+      } else {
+        usage();
       }
 
       System.exit(0);
