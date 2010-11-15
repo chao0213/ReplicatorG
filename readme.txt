@@ -12,6 +12,12 @@ Windows: http://www.replicat.org/windows-installation
 Mac OSX: http://www.replicat.org/mac-osx-installation
 Linux:   http://www.replicat.org/linux-installation
 
+RUNNING
+
+Running 'replicatorg' will give you the standard ReplicatorG GUI. If
+you want to use the command line interface, run 'replicatorg --nogui'
+for usage instructions.
+
 CREDITS
 
 ReplicatorG is an open source project, owned by nobody and supported by many.
