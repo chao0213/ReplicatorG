@@ -222,7 +222,7 @@ public class Base {
 	MainWindow editor = null;
 
 	static public void main(String args[]) {
-	    boolean showWindow = false;
+	        boolean showWindow = ! (args.length > 0 && args[0].equals("--nogui"));
 
 		// make sure that this is running on java 1.5 or better.
 		if (Base.javaVersion < 1.5f) {
@@ -234,11 +234,8 @@ public class Base {
 
 		// grab any opened file from the command line
 
-		if (args.length == 1 && !args[0].equals("-s")) {
+		if (args.length == 1 && !showWindow) {
 			Base.openedAtStartup = args[0];
-			showWindow = true;
-		} else if (args.length == 0) {
-		    showWindow = true;
 		}
 		    
 		
