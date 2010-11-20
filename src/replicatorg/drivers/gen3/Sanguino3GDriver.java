@@ -360,8 +360,7 @@ public class Sanguino3GDriver extends SerialDriver
 		}
 		
 		Base.logger.log(Level.FINE,"Reported version: "
-					+ Integer.toHexString(versionNum)
-					+ " " + buildname);
+					+ versionNum + " " + buildname);
 		if (versionNum == 0) {
 			Base.logger.severe("Null version reported!");
 			return null;
@@ -410,8 +409,7 @@ public class Sanguino3GDriver extends SerialDriver
 		}
 		
 		Base.logger.log(Level.FINE,"Reported slave board version: "
-					+ Integer.toHexString(slaveVersionNum)
-					+ " " + buildname);
+					+ slaveVersionNum + " " + buildname);
 		if (slaveVersionNum == 0)
 			Base.logger.severe("Toolhead "+Integer.toString(toolIndex)+": Not found.\nMake sure the toolhead is connected, the power supply is plugged in and turned on, and the power switch on the motherboard is on.");
         else
@@ -602,7 +600,7 @@ public class Sanguino3GDriver extends SerialDriver
 		// already automagically enabled by most commands and need
 		// not be explicitly enabled.
 		PacketBuilder pb = new PacketBuilder(MotherboardCommandCode.ENABLE_AXES.getCode());
-		pb.add8(0x87); // enable x,y,z
+		pb.add8(0x9f); // enable all 5 axes
 		runCommand(pb.getPacket());
 		super.enableDrives();
 	}
@@ -610,7 +608,7 @@ public class Sanguino3GDriver extends SerialDriver
 	public void disableDrives() throws RetryException {
 		// Command RMB to disable its steppers.
 		PacketBuilder pb = new PacketBuilder(MotherboardCommandCode.ENABLE_AXES.getCode());
-		pb.add8(0x07); // disable x,y,z
+		pb.add8(0x1f); // disable all 5 axes
 		runCommand(pb.getPacket());
 		super.disableDrives();
 	}
@@ -620,17 +618,36 @@ public class Sanguino3GDriver extends SerialDriver
 		super.changeGearRatio(ratioIndex);
 	}
 
-	public void requestToolChange(int toolIndex) throws RetryException {
+	/**
+	 * Will wait for first the tool, then the build platform, it exists and supported.
+	 * Technically the platform is connected to a tool (extruder controller) 
+	 * but this information is currently not used by the firmware.
+	 * 
+	 * timeout is given in seconds. If the tool isn't ready by then, the machine will continue anyway.
+	 */
+	public void requestToolChange(int toolIndex, int timeout) throws RetryException {
 		selectTool(toolIndex);
 
 		Base.logger.log(Level.FINE,"Waiting for tool #" + toolIndex);
 
 		// send it!
-		PacketBuilder pb = new PacketBuilder(MotherboardCommandCode.WAIT_FOR_TOOL.getCode());
-		pb.add8((byte) toolIndex);
-		pb.add16(100); // delay between master -> slave pings (millis)
-		pb.add16(120); // timeout before continuing (seconds)
-		runCommand(pb.getPacket());
+		if (this.machine.currentTool().getTargetTemperature() > 0.0) {
+			PacketBuilder pb = new PacketBuilder(MotherboardCommandCode.WAIT_FOR_TOOL.getCode());
+			pb.add8((byte) toolIndex);
+			pb.add16(100); // delay between master -> slave pings (millis)
+			pb.add16(timeout); // timeout before continuing (seconds)
+			runCommand(pb.getPacket());
+		}
+		
+		if (this.machine.getTool(toolIndex).hasHeatedPlatform() && 
+			this.machine.currentTool().getPlatformTargetTemperature() > 0.0 &&
+			getVersion().atLeast(new Version(2,4)) && toolVersion.atLeast(new Version(2,6))) {
+			PacketBuilder pb = new PacketBuilder(MotherboardCommandCode.WAIT_FOR_PLATFORM.getCode());
+			pb.add8((byte) toolIndex);
+			pb.add16(100); // delay between master -> slave pings (millis)
+			pb.add16(timeout); // timeout before continuing (seconds)
+			runCommand(pb.getPacket());
+		}
 	}
 
 	public void selectTool(int toolIndex) throws RetryException {
